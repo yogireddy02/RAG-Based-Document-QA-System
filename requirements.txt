@@ -1,0 +1,14 @@
+openai
+boto3
+pinecone
+neo4j
+langchain
+langchain-openai
+langchain-text-splitters
+pymupdf
+python-dotenv
+fastapi
+uvicorn
+streamlit
+pytest
+docling
