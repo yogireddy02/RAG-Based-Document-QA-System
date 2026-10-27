@@ -1,0 +1,28 @@
+# Secrets
+
+.env
+.env.*
+!.env.example
+
+# Python
+
+**pycache**/
+*.py[cod]
+.venv/
+
+# Test caches
+
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+
+.idea/
+
+# Uploaded documents and local test data
+
+data/
+
+# Generated files
+
+*.log
