@@ -27,7 +27,7 @@ def store_embeddings(
 
         documents.append(
             {
-                "id": document_id,
+                "_id": document_id,
                 "text": chunk["text"],
                 "embedding": embedding,
                 "source": chunk["source"],
@@ -36,7 +36,7 @@ def store_embeddings(
         )
 
     response = index.documents.upsert(
-        namespace="",
+        namespace="document-qa",
         documents=documents,
     )
 
