@@ -22,6 +22,16 @@ st.set_page_config(
     layout="wide",
 )
 
+# ----------------------------------------------------
+# SESSION STATE INITIALIZATION
+# ----------------------------------------------------
+
+if "messages" not in st.session_state:
+    st.session_state["messages"] = []
+
+if "processed_files" not in st.session_state:
+    st.session_state["processed_files"] = {}
+
 st.title("📚 RAG-Based Document Q&A System")
 
 st.markdown(
@@ -29,15 +39,6 @@ st.markdown(
     "Get AI-generated answers grounded in your documents."
 )
 
-# ----------------------------------------------------
-# SESSION STATE
-# ----------------------------------------------------
-
-if "message" not in st.session_state:
-    st.session_state.message = []
-
-if "processed_files" not in st.session_state:
-    st.session_state.processed_files = {}
 
 # ---------------------------------------------------
 # SIDEBAR: DOCUMENT UPLOAD
@@ -107,7 +108,7 @@ with st.sidebar:
                                 document['source'] = uploaded_file.name
 
                             # Split text into chunks.
-                            chunks = split_documents(document)
+                            chunks = split_documents(documents)
 
                             if not chunks:
                                 st.warning(
@@ -152,18 +153,17 @@ with st.sidebar:
 
     st.subheader("📄 Processed Documents")
 
-    if st.session_state.processed_files:
+    if st.session_state["processed_files"]:
 
-        for filename in set(
-            st.session_state.processed_files.values()
-        ):
+        for file_hash, filename in st.session_state["processed_files"].items():
             st.write(f"✅ {filename}")
+            st.caption(f"Document ID: {file_hash[:12]}")
 
     else:
         st.caption("No documents processed in this session yet.")
 
     if st.button("clear Chat", use_container_width=True):
-        st.session_state.message = []
+        st.session_state["messages"] = []
         st.rerun()
 
 
@@ -174,7 +174,7 @@ with st.sidebar:
 st.subheader("💬 Ask Your Documents")
 
 # Display previous messages.
-for message in st.session_state.message:
+for message in st.session_state["messages"]:
 
     with st.chat_message(message["role"]):
 
@@ -209,7 +209,7 @@ question = st.chat_input(
 if question:
 
     # Display user question.
-    st.session_state.messages.append(
+    st.session_state['messages'].append(
         {
             "role": "user",
             "content": question,
@@ -254,7 +254,7 @@ if question:
 
                             st.divider()
 
-                st.session_state.message.append(
+                st.session_state["messages"].append(
                     {
                         "role": "assistant",
                         "content": answer,
@@ -270,7 +270,7 @@ if question:
 
                 st.error(error_message)
 
-                st.session_state.message.append(
+                st.session_state["message"].append(
                     {
                         "role": "assistant",
                         "content": error_message,
