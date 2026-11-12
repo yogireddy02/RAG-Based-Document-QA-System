@@ -7,6 +7,8 @@ from src.document_loader import extract_text_from_document
 from src.text_chunker import split_documents
 from src.embedding_service import generate_embeddings
 from src.vector_store import store_embeddings
+from pydantic import BaseModel
+from src.answer_generator import generate_answer
 
 # Initialize FasTAPI application
 app = FastAPI(
@@ -14,6 +16,9 @@ app = FastAPI(
     description="Backend API for the RAG-Based Document Q&A System",
     version="1.0.0",
 )
+
+class QuestionRequest(BaseModel):
+    question: str
 
 @app.get("/")
 def home():
@@ -113,3 +118,30 @@ def upload_document(file: UploadFile = File(...)):
     finally:
         if temp_path:
             Path(temp_path).unlink(missing_ok=True)
+
+@app.post("/ask")
+def ask_question(request: QuestionRequest):
+
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty.",
+        )
+
+    try:
+        result = generate_answer(question)
+
+        return {
+            "question": question,
+            "answer": result["answer"],
+            "sources": result["sources"],
+            "status": "success",
+        }
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Question processing failed: {str(error)}",
+        )

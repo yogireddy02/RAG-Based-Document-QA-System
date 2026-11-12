@@ -12,3 +12,4 @@ uvicorn
 streamlit
 pytest
 docling
+requests

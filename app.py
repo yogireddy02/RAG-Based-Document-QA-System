@@ -1,16 +1,7 @@
 import traceback
 import hashlib
-import tempfile
-from pathlib import Path
-
 import streamlit as st
-
-from src.document_loader import extract_text_from_document
-from src.text_chunker import split_documents
-from src.embedding_service import generate_embeddings
-from src.vector_store import store_embeddings
-from src.answer_generator import generate_answer
-
+from src.api_client import upload_document, ask_question
 
 # ---------------------------------------------------
 # PAGE CONFIGURATION
@@ -69,7 +60,7 @@ with st.sidebar:
                     file_content
                 ).hexdigest()
 
-                if file_hash in st.session_state.processed_files:
+                if file_hash in st.session_state["processed_files"]:
                     st.info(
                         f"{uploaded_file.name} is already processed."
                     )
@@ -80,74 +71,21 @@ with st.sidebar:
                     with st.spinner(
                         f"processing {uploaded_file.name}..."
                     ):
-                        # Save uploaded PDF temporarily.
-                        with tempfile.NamedTemporaryFile(
-                            delete=False,
-                            suffix=".pdf",
-                        ) as temp_file:
 
-                            temp_file.write(file_content)
-                            temp_path = temp_file.name
+                        result = upload_document(uploaded_file)
 
-                        try:
+                        st.session_state["processed_files"][
+                            file_hash
+                        ] = uploaded_file.name
 
-                            # Extract document text.
-                            documents = extract_text_from_document(
-                                temp_path
-                            )
-
-                            if not documents:
-                                st.warning(
-                                    f"No text extracted from "
-                                    f"{uploaded_file.name}."
-                                )
-                                continue
-
-                            # Preserve original fileaname.
-                            for document in documents:
-                                document['source'] = uploaded_file.name
-
-                            # Split text into chunks.
-                            chunks = split_documents(documents)
-
-                            if not chunks:
-                                st.warning(
-                                    f"No chunks created for "
-                                    f"{uploaded_file.name}."
-                                )
-                                continue
-
-                            # Generate embeddings.
-                            texts = [
-                                chunk["text"]
-                                for chunk in chunks
-                            ]
-
-                            embeddings = generate_embeddings(texts)
-
-                            # Store chunks in Pinecone.
-                            stored_count = store_embeddings(
-                                chunks,
-                                embeddings
-                            )
-
-                            st.session_state.processed_files[
-                                file_hash
-                            ] = uploaded_file.name
-
-                            st.success(
-                                f"Processed {uploaded_file.name}: "
-                                f"{stored_count} chunks stored."
-                            )
-
-                        finally:
-                            Path(temp_path).unlink(missing_ok=True)
-
+                        st.success(
+                            f"Processed {result['filename']} "
+                            f"{result['chunks_stored']} chunks stored."
+                        )
                 except Exception as error:
                     st.error(
                         f"Failed to process {uploaded_file.name}: {error}"
                     )
-                    st.code(traceback.format_exc() )
 
     st.divider()
 
@@ -226,7 +164,7 @@ if question:
 
             try:
 
-                result = generate_answer(question)
+                result = ask_question(question)
 
                 answer = result["answer"]
                 sources = result['sources']
